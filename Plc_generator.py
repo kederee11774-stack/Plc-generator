@@ -216,3 +216,12 @@ if st.button("🚀 توليد البرنامج وشاشة الـ HMI الآن", 
                 with tab2:
                     st.markdown("**معاينة تصميم شاشة الـ HMI:**")
                     components.html(svg_code, height=400)
+                    st.download_button("📥 تحميل تصميم الشاشة (.svg)", svg_code, file_name="HMI_Design.svg", use_container_width=True)
+                    
+                with tab3:
+                    st.dataframe(edited_io, use_container_width=True)
+                    csv_data = edited_io.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button("📥 تحميل ملف متغيرات الشاشة (.csv)", csv_data, file_name="HMI_Tags.csv", use_container_width=True)
+                    
+            except Exception as e:
+                st.error(f"حدث خطأ: {e}")
