@@ -4,7 +4,6 @@ from google import genai
 from google.genai import types
 import streamlit.components.v1 as components
 
-# إعدادات الصفحة والأيقونة
 st.set_page_config(
     page_title="مُولّد برامج PLC و HMI الاحترافي V3",
     page_icon="🏭",
@@ -14,7 +13,6 @@ st.set_page_config(
 st.title("🏭 المساعد الهندسي لأتمتة المصانع (V3.0 Pro)")
 st.caption("توليد أكواد PLC (Ladder / ST / IL) وتصميم شاشات HMI بضغطة زر")
 
-# دالة التحويل التلقائي للعناوين حسب الماركة
 def get_brand_addresses(brand, count=6):
     if "Siemens" in brand:
         base = ["I0.0", "I0.1", "I0.2", "Q0.0", "Q0.1", "M0.0"]
@@ -22,11 +20,10 @@ def get_brand_addresses(brand, count=6):
         base = ["0.00", "0.01", "0.02", "100.00", "100.01", "W0.00"]
     elif "ABB" in brand:
         base = ["%IX0.0", "%IX0.1", "%IX0.2", "%QX0.0", "%QX0.1", "%MX0.0"]
-    else: # Delta, Mitsubishi, Xinje, Panasonic
+    else:
         base = ["X0", "X1", "X2", "Y0", "Y1", "M0"]
     return base[:count]
 
-# قوالب المشاريع الجاهزة
 TEMPLATES = {
     "🛠️ مشروع مخصص (تعديل حر)": {
         "io": [
@@ -74,7 +71,6 @@ TEMPLATES = {
     }
 }
 
-# الشريط الجانبي للإعدادات والقوائم المنسدلة
 with st.sidebar:
     st.header("⚙️ إعدادات النظام")
     api_key = st.text_input("🔑 مفتاح Gemini API Key:", type="password")
@@ -109,7 +105,6 @@ with st.sidebar:
         list(TEMPLATES.keys())
     )
 
-# تجهيز بيانات القالب المختار مع العناوين المحولة
 template_data = TEMPLATES[selected_template]
 addresses = get_brand_addresses(plc_brand, len(template_data["io"]))
 
@@ -122,14 +117,12 @@ for idx, item in enumerate(template_data["io"]):
         "Description": item["Description"]
     })
 
-# تقسيم الشاشة الرئيسية
 col1, col2 = st.columns([1.2, 1])
 
 with col1:
     st.subheader("1️⃣ جدول المداخل والمخارج (قوائم تفاعلية)")
     df_io = pd.DataFrame(io_rows)
     
-    # تفعيل القوائم المنسدلة داخل الجدول
     edited_io = st.data_editor(
         df_io,
         num_rows="dynamic",
@@ -171,10 +164,9 @@ if st.button("🚀 توليد البرنامج وشاشة الـ HMI الآن", 
                 client = genai.Client(api_key=api_key)
                 io_text = edited_io.to_csv(index=False)
                 
-                # تخصيص التعليمات إذا اختار المستخدم لغة Ladder
                 ladder_instruction = ""
                 if "Ladder" in code_lang:
-                    ladder_instruction = """
+                    ladder_instruction = f"""
                     بما أن المستخدم طلب Ladder Diagram:
                     1. ارسم أولاً كل Network/Rung بشكل تخطيطي واضح باستخدام الرموز النصية (ASCII Ladder) مثل: --| |-- و --|/|-- و --( )-- مع كتابة العناوين وأسماء المتغيرات فوق كل عنصر.
                     2. اكتب أسفل الرسم مباشرة كود التعليمات المقابل له (Mnemonic / Instruction List / STL) الخاص بماركة {plc_brand} لكي يتمكن المهندس من نسخه ولصقه مباشرة في البرنامج ليتحول إلى Ladder.
@@ -199,7 +191,6 @@ if st.button("🚀 توليد البرنامج وشاشة الـ HMI الآن", 
                     config=types.GenerateContentConfig(temperature=0.1)
                 )
                 
-                # توليد شاشة HMI تفاعلية المظهر
                 hmi_prompt = f"""
                 صمم واجهة شاشة لمس صناعية (HMI Screen) احترافية بصيغة كود SVG فقط (أبعاد 650x380) تمثل العناصر الموجودة في هذا الجدول:
                 {io_text}
@@ -220,4 +211,8 @@ if st.button("🚀 توليد البرنامج وشاشة الـ HMI الآن", 
                 
                 with tab1:
                     st.code(plc_res.text, language="text" if "Ladder" in code_lang else "iecst")
-
+                    st.download_button("📥 تحميل ملف الكود (.txt)", plc_res.text, file_name="PLC_Code.txt", use_container_width=True)
+                    
+                with tab2:
+                    st.markdown("**معاينة تصميم شاشة الـ HMI:**")
+                    components.html(svg_code, height=400)
